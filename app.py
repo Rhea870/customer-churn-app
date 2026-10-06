@@ -4,7 +4,7 @@ import pandas as pd
 
 st.set_page_config(page_title="Churn Prediction")
 st.title("📉 Customer Churn Prediction System")
-st.write("Classification use garera banako project")
+#st.write("Classification use garera banako project")
 
 # Model load
 try:
@@ -12,7 +12,7 @@ try:
     model_loaded = True
 except:
     model_loaded = False
-    st.warning("Pahila train.py run gara - model.pkl banna baki xa")
+    #st.warning("Pahila train.py run gara - model.pkl banna baki xa")
 
 # Input form
 col1, col2 = st.columns(2)
