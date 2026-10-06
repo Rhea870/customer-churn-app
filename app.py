@@ -18,10 +18,10 @@ except:
 col1, col2 = st.columns(2)
 with col1:
     tenure = st.slider("Tenure (months)", 0, 72, 12)
-    monthly = st.number_input("Monthly Charges", 50.0)
+    monthly = st.number_input("Monthly Charges", 0.0)
     contract = st.selectbox("Contract", [0,1,2], format_func=lambda x: ["Month-to-month","One year","Two year"][x])
 with col2:
-    total = st.number_input("Total Charges", 1000.0)
+    total = st.number_input("Total Charges", 0.0)
     internet = st.selectbox("Internet Service", [0,1,2], format_func=lambda x: ["DSL","Fiber optic","No"][x])
     online_security = st.selectbox("Online Security", [0,1])
 
@@ -35,4 +35,4 @@ if st.button("🔮 Predict Churn"):
         else:
             st.success("✅ Customer will STAY - Loyal")
     else:
-        #st.error("Model chaina, train.py run gara")
+      # st.error("Model chaina, train.py run gara")
