@@ -35,4 +35,4 @@ if st.button("🔮 Predict Churn"):
         else:
             st.success("✅ Customer will STAY - Loyal")
     else:
-        st.error("Model chaina, train.py run gara")
+        #st.error("Model chaina, train.py run gara")
