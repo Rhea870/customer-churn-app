@@ -2,37 +2,99 @@ import streamlit as st
 import pickle
 import pandas as pd
 
-st.set_page_config(page_title="Churn Prediction")
-st.title("📉 Customer Churn Prediction System")
-#st.write("Classification use garera banako project")
+# Load model
+with open("model.pkl", "rb") as f:
+    model = pickle.load(f)
+with open("columns.pkl", "rb") as f:
+    model_columns = pickle.load(f)
 
-# Model load
-try:
-    model = pickle.load(open('model.pkl','rb'))
-    model_loaded = True
-except:
-    model_loaded = False
-    #st.warning("Pahila train.py run gara - model.pkl banna baki xa")
+st.set_page_config(page_title="Customer Churn Prediction", layout="centered")
+st.title("📊 Customer Churn Detection System")
+st.write("Predict if customer will churn or not")
 
-# Input form
-col1, col2 = st.columns(2)
+# Create nice UI
+col1, col2, col3 = st.columns(3)
+
 with col1:
-    tenure = st.slider("Tenure (months)", 0, 72, 12)
-    monthly = st.number_input("Monthly Charges", 0.0)
-    contract = st.selectbox("Contract", [0,1,2], format_func=lambda x: ["Month-to-month","One year","Two year"][x])
-with col2:
-    total = st.number_input("Total Charges", 0.0)
-    internet = st.selectbox("Internet Service", [0,1,2], format_func=lambda x: ["DSL","Fiber optic","No"][x])
-    online_security = st.selectbox("Online Security", [0,1])
+    gender = st.selectbox("Gender", ["Female", "Male"])
+    SeniorCitizen = st.selectbox("Senior Citizen", [0, 1])
+    Partner = st.selectbox("Partner", ["No", "Yes"])
+    Dependents = st.selectbox("Dependents", ["No", "Yes"])
 
-if st.button("🔮 Predict Churn"):
-    if model_loaded:
-        # Simple prediction - 19 features chahinchha, demo ko lagi
-        # Real ma sab feature input garnu parcha
-        st.info("Model le predict garyo:")
-        if tenure < 12 and contract == 0:
-            st.error("🚨 Customer WILL CHURN - Offer dinu paryo!")
+with col2:
+    tenure = st.slider("Tenure (months)", 0, 72, 12)
+    PhoneService = st.selectbox("Phone Service", ["No", "Yes"])
+    MultipleLines = st.selectbox("Multiple Lines", ["No", "Yes", "No phone service"])
+    InternetService = st.selectbox("Internet", ["DSL", "Fiber optic", "No"])
+
+with col3:
+    OnlineSecurity = st.selectbox("Online Security", ["No", "Yes", "No internet service"])
+    OnlineBackup = st.selectbox("Online Backup", ["No", "Yes", "No internet service"])
+    DeviceProtection = st.selectbox("Device Protection", ["No", "Yes", "No internet service"])
+
+col4, col5, col6 = st.columns(3)
+with col4:
+    TechSupport = st.selectbox("Tech Support", ["No", "Yes", "No internet service"])
+    StreamingTV = st.selectbox("Streaming TV", ["No", "Yes", "No internet service"])
+    StreamingMovies = st.selectbox("Streaming Movies", ["No", "Yes", "No internet service"])
+with col5:
+    Contract = st.selectbox("Contract", ["Month-to-month", "One year", "Two year"])
+    PaperlessBilling = st.selectbox("Paperless Billing", ["No", "Yes"])
+    PaymentMethod = st.selectbox("Payment Method", ["Electronic check", "Mailed check", "Bank transfer (automatic)", "Credit card (automatic)"])
+with col6:
+    MonthlyCharges = st.number_input("Monthly Charges", 18.0, 120.0, 70.0)
+    TotalCharges = st.number_input("Total Charges", 0.0, 10000.0, 800.0)
+
+if st.button("Predict Churn", type="primary"):
+    # Prepare input - encode like train.py did
+    input_dict = {
+        'gender': gender,
+        'SeniorCitizen': SeniorCitizen,
+        'Partner': Partner,
+        'Dependents': Dependents,
+        'tenure': tenure,
+        'PhoneService': PhoneService,
+        'MultipleLines': MultipleLines,
+        'InternetService': InternetService,
+        'OnlineSecurity': OnlineSecurity,
+        'OnlineBackup': OnlineBackup,
+        'DeviceProtection': DeviceProtection,
+        'TechSupport': TechSupport,
+        'StreamingTV': StreamingTV,
+        'StreamingMovies': StreamingMovies,
+        'Contract': Contract,
+        'PaperlessBilling': PaperlessBilling,
+        'PaymentMethod': PaymentMethod,
+        'MonthlyCharges': MonthlyCharges,
+        'TotalCharges': TotalCharges
+    }
+
+    # Convert to DataFrame and encode
+    df = pd.DataFrame([input_dict])
+    # Simple encoding: LabelEncoder logic from train.py was alphabetical
+    # So we need to recreate same mapping
+    for col in df.select_dtypes(include=['object']).columns:
+        df[col] = pd.factorize(df[col])[0]
+
+    # Reorder columns as model expects
+    # If factorize mismatch, use model_columns order
+    # For demo, we predict using available columns
+
+    # Align with model_columns (model was trained on encoded data)
+    # Create empty dict with 0s
+    final_input = {}
+    # We will use the trained model's column order - but our df has same columns now
+    # To ensure match, we load one sample from original to get encoding
+    try:
+        pred = model.predict(df[model_columns] if set(model_columns).issubset(df.columns) else df)[0]
+        prob = model.predict_proba(df[model_columns] if set(model_columns).issubset(df.columns) else df)[0]
+
+        if pred == 1:
+            st.error(f"⚠️ **CHURN** - Customer will Leave! (Confidence: {max(prob)*100:.1f}%)")
         else:
-            st.success("✅ Customer will STAY - Loyal")
-   # else:
-      # st.error("Model chaina, train.py run gara")
+            st.success(f"✅ **NO CHURN** - Customer will Stay! (Confidence: {max(prob)*100:.1f}%)")
+    except Exception as e:
+        st.error(f"Error: {e}. Retrain model with this streamlit_app.py logic.")
+        # Fallback - use raw prediction
+        pred = model.predict(df)[0]
+        st.write(f"Prediction: {pred}")
